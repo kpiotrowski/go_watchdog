@@ -4,7 +4,10 @@ import (
 	"time"
 	"fmt"
 	"errors"
-	"os"
+)
+
+const (
+	initDPath = "/etc/init.d/"
 )
 
 type service interface {
@@ -16,16 +19,16 @@ type service interface {
 type serviceStruct struct {
 	name string
 	checkInterval time.Duration
-	restartInterval time.Duration
-	restartNumber int
+	startInterval time.Duration
+	startTries int
+	os osInterface
 }
 
-
 func NewService(name, checkInterval, startInterval string, tries int) (*serviceStruct, error) {
-	if _, err := os.Stat("/etc/init.d/"+name); err != nil {
-		return nil, errors.New(fmt.Sprintf("Service %s doesn't exist\n",name))
-	}
+	return newServiceWithOs(name, checkInterval, startInterval, tries, OsFS{})
+}
 
+func newServiceWithOs(name, checkInterval, startInterval string, tries int, os osInterface) (*serviceStruct, error) {
 	checkI, err := time.ParseDuration(checkInterval)
 	if err != nil{
 		return  nil, err
@@ -40,11 +43,16 @@ func NewService(name, checkInterval, startInterval string, tries int) (*serviceS
 		return nil, errors.New("Incorrect number of tries to run service")
 	}
 
+	if _, err := os.Stat(initDPath+name); err != nil {
+		return nil, errors.New(fmt.Sprintf("Service %s doesn't exist\n",name))
+	}
+
 	service := new(serviceStruct)
 	service.name = name
 	service.checkInterval = checkI
-	service.restartInterval = restartI
-	service.restartNumber = tries
+	service.startInterval = restartI
+	service.startTries = tries
+	service.os = os
 
 	return service, nil
 }
