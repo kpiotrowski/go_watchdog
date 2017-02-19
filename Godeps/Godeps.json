@@ -12,9 +12,18 @@
 			"Rev": "346938d642f2ec3594ed81d874461961cd0faa76"
 		},
 		{
+			"ImportPath": "github.com/kardianos/osext",
+			"Rev": "9b883c5eb462dd5cb1b0a7a104fe86bc6b9bd391"
+		},
+		{
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
 			"Comment": "v1.0.0",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/sevlyar/go-daemon",
+			"Comment": "v0.1.0-5-g8577c7d",
+			"Rev": "8577c7ddef908e104dae56c9e46f0956cb33c844"
 		},
 		{
 			"ImportPath": "github.com/stretchr/objx",
