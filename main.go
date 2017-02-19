@@ -13,5 +13,4 @@ func main() {
 		log.Fatal(err)
 	}
 	service.Watch()
-
 }
