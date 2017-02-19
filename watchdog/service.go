@@ -13,6 +13,9 @@ const (
 	serviceCommand = "service"
 	startCommand = "start"
 	statusCommand = "status"
+	serviceDown = iota
+	serviceStart = iota
+	serviceCannotStart = iota
 )
 
 type serviceStruct struct {
@@ -75,31 +78,64 @@ func (service *serviceStruct) Start() bool {
 	return true
 }
 
-func (service *serviceStruct) Watch(sender mail.SenderInterface) {
-	for {
+func notify(sender mail.SenderInterface, service string, attempts, status int){
+	var logMsg string
+	var title string
+
+	switch status {
+	case serviceDown:
+		logMsg = fmt.Sprintf("%s Service %s is down", time.Now().String(), service)
+		title = service+" is down"
+	case serviceStart:
+		logMsg = fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service, attempts)
+		title = service+" started"
+	case serviceCannotStart:
+		logMsg = fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service, attempts)
+		title = service+" start failed"
+	}
+
+	log.Println(logMsg)
+	go sender.Send(title, []byte(logMsg))
+}
+
+func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan bool) {
+	loop := true
+	checInterval := make(chan time.Time)
+	startInterval := make(chan time.Time)
+	go func() {
+		<- stopChan
+		loop = false
+		checInterval <- time.Now()
+		startInterval <- time.Now()
+	}()
+
+	for loop {
 		run := service.Running()
 		if !run {
-			logMsg := fmt.Sprintf("%s Service %s is down", time.Now().String(), service.name)
-			log.Println(logMsg)
-			go sender.Send(service.name+" is down", []byte(logMsg))
-
-			for i:=1 ; i<= service.startTries ; i++ {
+			notify(sender, service.name, 0, serviceDown)
+			for i:=1 ; i<= service.startTries && loop ; i++ {
 				if run = service.Start() ; run {
-					logMsg = fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service.name, i)
-					log.Println(logMsg)
-					go sender.Send(service.name+" started",[]byte(logMsg))
+					notify(sender, service.name, i, serviceStart)
 					break
 				}
-				time.Sleep(service.startInterval)
+				go func(){
+					time.Sleep(service.startInterval)
+					startInterval <- time.Now()
+				}()
+				<-startInterval
 			}
 			if !run {
-				logMsg = fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service.name, service.startTries)
-				log.Println(logMsg)
-				go sender.Send(service.name+" start Failed", []byte(logMsg))
+				notify(sender, service.name, service.startTries, serviceCannotStart)
 				return
 			}
-
 		}
-		time.Sleep(service.checkInterval)
+		if !loop {
+			return
+		}
+		go func(){
+			time.Sleep(service.checkInterval)
+			checInterval <- time.Now()
+		}()
+		<-checInterval
 	}
 }

@@ -7,13 +7,12 @@ import(
 	"github.com/kpiotrowski/go_watchdog/watchdog"
 	"flag"
 	"github.com/sevlyar/go-daemon"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 var(
-	signal = flag.String("k", "", `send signal to the daemon
-                quit — graceful shutdown
-                stop — fast shutdown`)
-	processPid = flag.Int("p", 0, `process pid used to send signal`)
 	serviceName = flag.String("s", "", "service name to watch")
 	logFile = flag.String("l","log", "log fle name")
 	checkInterval = flag.String("c", "60s", "Check isterval [duration string]")
@@ -54,12 +53,15 @@ func main() {
 	}
 	defer context.Release()
 
-	go service.Watch(mailSender)
+	stop := make(chan bool)
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	go func() {
+		_ = <-sigc
+		stop <- true
+	}()
 
-	err = daemon.ServeSignals()
-	if err != nil {
-	      log.Println("Serve siglans error:", err)
-	}
-
-	service.Watch(mailSender)
+	service.Watch(mailSender, stop)
 }
