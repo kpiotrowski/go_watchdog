@@ -4,7 +4,7 @@ import(
 	"log"
 	"github.com/kpiotrowski/go_watchdog/common"
 	"github.com/kpiotrowski/go_watchdog/mail"
-	"fmt"
+	"github.com/kpiotrowski/go_watchdog/watchdog"
 )
 
 func main() {
@@ -18,15 +18,11 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	err = mailSender.Send("tit",[]byte("body"))
-	if err != nil {
-		fmt.Print(err)
-	}
 
-	////TODO ADD CONFIGURABLE VARIABLES AND RUN AS DEMON
-	//service, err:= watchdog.NewService("mysql", "10s", "10s", 4)
-	//if err != nil{
-	//	log.Fatal(err)
-	//}
-	//service.Watch(mailSender)
+	//TODO ADD CONFIGURABLE VARIABLES AND RUN AS DEMON
+	service, err:= watchdog.NewService("mysql", "10s", "10s", 4)
+	if err != nil{
+		log.Fatal(err)
+	}
+	service.Watch(mailSender)
 }

@@ -15,12 +15,6 @@ const (
 	statusCommand = "status"
 )
 
-type service interface {
-	Running() bool
-	Start() (bool, error)
-	Watch()
-}
-
 type serviceStruct struct {
 	name string
 	checkInterval time.Duration

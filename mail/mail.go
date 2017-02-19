@@ -18,7 +18,6 @@ type emailSender struct {
 	smtpServerPort string
 	smtpServerHost string
 	to *mail.Address
-
 	auth smtp.Auth
 }
 
@@ -40,7 +39,7 @@ func NewEmailSender(config common.MailConf) (*emailSender, error) {
 	}
 	sender.smtpServerHost = host
 	sender.smtpServerPort = port
-	if len(config.MailFromAddress) < 1 {
+	if len(config.MailFromPassword) < 1 {
 		return nil, errors.New("Email password cannot be empty")
 	}
 	sender.auth = smtp.PlainAuth("", addrFrom.Address, config.MailFromPassword, host)
@@ -49,17 +48,17 @@ func NewEmailSender(config common.MailConf) (*emailSender, error) {
 }
 
 func createMessage(title string, body []byte) []byte{
-	byteMsg := []byte(fmt.Sprintf("Subject: %s\r\n",title))
-	return append(byteMsg, body...)
+	byteMsg := []byte(fmt.Sprintf("Subject: %s\n\n",title))
+	byteMsg = append(byteMsg, body...)
+	return byteMsg
 }
 
 func (e *emailSender) Send(title string, body []byte) error {
-	err := smtp.SendMail(
+	return smtp.SendMail(
 		e.smtpServerHost+":"+e.smtpServerPort,
 		e.auth,
 		e.from.Address,
 		[]string{e.to.Address},
 		createMessage(title,body),
 	)
-	return err
 }
