@@ -42,6 +42,9 @@ func newServiceWithOs(name, checkInterval, startInterval string, tries int, os o
 		return nil, errors.New("Incorrect number of tries to run service")
 	}
 
+	if len(name) < 1 {
+		return nil, errors.New("Service name cannot be empty")
+	}
 	if _, err := os.Stat(initDPath+name); err != nil {
 		return nil, errors.New(fmt.Sprintf("Service %s doesn't exist\n",name))
 	}
@@ -78,13 +81,13 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface) {
 		if !run {
 			logMsg := fmt.Sprintf("%s Service %s is down", time.Now().String(), service.name)
 			log.Println(logMsg)
-			sender.Send(service.name+" is down", []byte(logMsg))
+			go sender.Send(service.name+" is down", []byte(logMsg))
 
 			for i:=1 ; i<= service.startTries ; i++ {
 				if run = service.Start() ; run {
 					logMsg = fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service.name, i)
 					log.Println(logMsg)
-					sender.Send(service.name+" started",[]byte(logMsg))
+					go sender.Send(service.name+" started",[]byte(logMsg))
 					break
 				}
 				time.Sleep(service.startInterval)
@@ -92,7 +95,7 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface) {
 			if !run {
 				logMsg = fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service.name, service.startTries)
 				log.Println(logMsg)
-				sender.Send(service.name+" start Failed", []byte(logMsg))
+				go sender.Send(service.name+" start Failed", []byte(logMsg))
 				return
 			}
 
