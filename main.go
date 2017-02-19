@@ -1,10 +1,10 @@
 package main
 
 import(
-	"github.com/kpiotrowski/go_watchdog/watchdog"
 	"log"
 	"github.com/kpiotrowski/go_watchdog/common"
 	"github.com/kpiotrowski/go_watchdog/mail"
+	"fmt"
 )
 
 func main() {
@@ -18,11 +18,15 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-
-	//TODO ADD CONFIGURABLE VARIABLES AND RUN AS DEMON
-	service, err:= watchdog.NewService("mysql", "10s", "10s", 4)
-	if err != nil{
-		log.Fatal(err)
+	err = mailSender.Send("tit",[]byte("body"))
+	if err != nil {
+		fmt.Print(err)
 	}
-	service.Watch(mailSender)
+
+	////TODO ADD CONFIGURABLE VARIABLES AND RUN AS DEMON
+	//service, err:= watchdog.NewService("mysql", "10s", "10s", 4)
+	//if err != nil{
+	//	log.Fatal(err)
+	//}
+	//service.Watch(mailSender)
 }

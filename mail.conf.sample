@@ -1,6 +1,5 @@
 [Mail]
 MailFromAddress = "from@gmail.com"
 MailFromPassword = "pass"
-MailServerAddress = "smtp.gmail.com"
-MailServerPort = 587
+MailServerAddress = "smtp.gmail.com:587"
 MailTo = "to@gmail.com"

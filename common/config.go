@@ -10,8 +10,7 @@ type Config struct {
 type MailConf struct {
 	MailFromAddress string
 	MailFromPassword string
-	MailServerAddress string
-	MailServerPort int
+	MailServer string
 	MailTo string
 }
 
