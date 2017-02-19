@@ -16,7 +16,8 @@ func (m *mockedOs) Stat(name string) (os.FileInfo, error) {
 	}
 	return args.Get(0).(os.FileInfo), args.Error(1)
 }
-func (m*mockedOs) ExecOutput(name string, arg ...string) ([]byte, error) {
-	args := m.Called(name, arg)
+
+func (m *mockedOs) ExecOutput(name string, arg ...string) ([]byte, error) {
+	args := m.Mock.Called(name, arg)
 	return args.Get(0).([]byte), args.Error(1)
 }

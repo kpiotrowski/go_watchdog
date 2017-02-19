@@ -51,3 +51,45 @@ func TestNewServiceSuccess(t *testing.T) {
 	assert.Equal(t, interval, service.startInterval, "Service start interval is incorrect")
 	assert.Equal(t, correctTries, service.startTries, "Service tries is incorrect")
 }
+
+func newTestService() serviceStruct {
+	interval , _ := time.ParseDuration(correctInterval)
+	s := serviceStruct{name:correctName,checkInterval:interval,startTries:correctTries,startInterval:interval}
+	return s
+}
+
+func TestServiceStruct_RunningFalse(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, statusCommand}).Return([]byte{}, errors.New("error"))
+	testService.os = osMock
+	running := testService.Running()
+	assert.False(t, running, "Service running should return false")
+}
+
+func TestServiceStruct_RunningTrue(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, statusCommand}).Return([]byte{}, nil)
+	testService.os = osMock
+	running := testService.Running()
+	assert.True(t, running, "Service running should return true")
+}
+
+func TestServiceStruct_StartFalse(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, startCommand}).Return([]byte{}, errors.New("error"))
+	testService.os = osMock
+	running := testService.Start()
+	assert.False(t, running, "Service start should return false")
+}
+
+func TestServiceStruct_StartTrue(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, startCommand}).Return([]byte{}, nil)
+	testService.os = osMock
+	running := testService.Start()
+	assert.True(t, running, "Service start should return true")
+}
