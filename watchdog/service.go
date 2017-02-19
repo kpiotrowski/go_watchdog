@@ -82,19 +82,19 @@ func (service *serviceStruct) Watch() {
 		run := service.Running()
 		if !run {
 			log.Println(fmt.Sprintf("%s Service %s is down", time.Now().String(), service.name))
-		}
-		for !run {
-			for i:=1 ; i<= service.startTries && !run ; i++ {
-				run = service.Start()
-				if run {
+
+			for i:=1 ; i<= service.startTries ; i++ {
+				if run = service.Start() ; run {
 					log.Println(fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service.name, i))
 					break
 				}
+				time.Sleep(service.startInterval)
 			}
 			if !run {
 				log.Println(fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service.name, service.startTries))
-				time.Sleep(service.startInterval)
+				return
 			}
+
 		}
 		time.Sleep(service.checkInterval)
 	}
