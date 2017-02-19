@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"errors"
 	"log"
+	"github.com/kpiotrowski/go_watchdog/mail"
 )
 
 const (
@@ -13,12 +14,6 @@ const (
 	startCommand = "start"
 	statusCommand = "status"
 )
-
-type service interface {
-	Running() bool
-	Start() (bool, error)
-	Watch()
-}
 
 type serviceStruct struct {
 	name string
@@ -77,21 +72,27 @@ func (service *serviceStruct) Start() bool {
 	return true
 }
 
-func (service *serviceStruct) Watch() {
+func (service *serviceStruct) Watch(sender mail.SenderInterface) {
 	for {
 		run := service.Running()
 		if !run {
-			log.Println(fmt.Sprintf("%s Service %s is down", time.Now().String(), service.name))
+			logMsg := fmt.Sprintf("%s Service %s is down", time.Now().String(), service.name)
+			log.Println(logMsg)
+			sender.Send(service.name+" is down", []byte(logMsg))
 
 			for i:=1 ; i<= service.startTries ; i++ {
 				if run = service.Start() ; run {
-					log.Println(fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service.name, i))
+					logMsg = fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service.name, i)
+					log.Println(logMsg)
+					sender.Send(service.name+" started",[]byte(logMsg))
 					break
 				}
 				time.Sleep(service.startInterval)
 			}
 			if !run {
-				log.Println(fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service.name, service.startTries))
+				logMsg = fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service.name, service.startTries)
+				log.Println(logMsg)
+				sender.Send(service.name+" start Failed", []byte(logMsg))
 				return
 			}
 
