@@ -95,7 +95,10 @@ func notify(sender mail.SenderInterface, service string, attempts, status int){
 	}
 
 	log.Println(logMsg)
-	go sender.Send(title, []byte(logMsg))
+	err := sender.Send(title, []byte(logMsg))
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan bool) {
