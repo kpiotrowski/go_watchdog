@@ -6,16 +6,5 @@ go:
  - 1.7.x
  - master
 
-env:
-  global:
-    - PATH=$HOME/gopath/bin:$PATH
-
-install:
-  - go get code.google.com/p/go.tools/cmd/cover github.com/mattn/goveralls github.com/modocache/gover
-
 script:
- - go test -coverprofile=.coverprofile ./mail/
- - go test -coverprofile=.coverprofile2 ./watchdog/
- - tail -n +2 .coverprofile2 >> .coverprofile
- - goveralls -coverprofile=.coverprofile -service=travis-ci -repotoken $COVERALLS_TOKEN
-
+ - go test -v ./...
