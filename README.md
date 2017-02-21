@@ -9,8 +9,8 @@ Simple watchdog written in golang
 Program is running as a daemon, and works if user is not logged.
 You can start multiple go_watchdogs for different services.
  
-To disable go_watchdog you need to send SIGQUIT or SIGTERM signal to the process. Go_watchdog catch signal and turn off.
-Go_watchdog turns of also is service was not started after number of given attempts. 
+To disable go_watchdog you need to send SIGQUIT or SIGTERM signal to the process. Go_watchdog catches signal and turns off.
+Go_watchdog also turns off if service was not started after number of attempts. 
 
 
 ## USAGE
