@@ -101,7 +101,7 @@ func notify(sender mail.SenderInterface, service string, attempts, status int){
 	}
 }
 
-func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan bool) {
+func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan bool) error {
 	loop := true
 	checInterval := make(chan time.Time)
 	startInterval := make(chan time.Time)
@@ -129,11 +129,11 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan b
 			}
 			if !run {
 				notify(sender, service.name, service.startTries, serviceCannotStart)
-				return
+				return errors.New("Failed to start service")
 			}
 		}
 		if !loop {
-			return
+			return nil
 		}
 		go func(){
 			time.Sleep(service.checkInterval)
@@ -141,4 +141,5 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan b
 		}()
 		<-checInterval
 	}
+	return nil
 }

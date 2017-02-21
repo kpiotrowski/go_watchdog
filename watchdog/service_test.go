@@ -5,16 +5,34 @@ import (
 	"github.com/stretchr/testify/assert"
 	"time"
 	"errors"
+	"os"
+	"os/exec"
 )
 
 const (
 	incorrectName = "name"
 	correctName = "mysql"
 	incorrectInterval = "interval"
-	correctInterval = "10s"
+	correctInterval = "1ms"
 	incorrectTries = 0
 	correctTries = 10
 )
+
+func TestSystemWrapperStat(t *testing.T){
+	osFS := OsFS{}
+	expected, err := os.Stat("log")
+	got, errGot := osFS.Stat("log")
+	assert.Equal(t, expected, got, "Results are different")
+	assert.Equal(t, err, errGot, "Results are different")
+}
+
+func TestSystemWrapperExec(t *testing.T){
+	osFS := OsFS{}
+	expected, err := exec.Command("ls").Output()
+	got, errGot := osFS.ExecOutput("ls")
+	assert.Equal(t, expected, got, "Results are different")
+	assert.Equal(t, err, errGot, "Results are different")
+}
 
 func TestNewServiceIncorrectCheckInterval(t *testing.T) {
 	_, err := NewService(correctName, incorrectInterval, correctInterval, correctTries)
@@ -29,13 +47,19 @@ func TestNewServiceIncorrectStartInterval(t *testing.T) {
 func TestNewServiceIncorrectTriesNumber(t *testing.T) {
 	_, err := NewService(correctName, correctInterval, correctInterval, incorrectTries)
 	assert.NotNil(t, err, "Incorrect stries number should return error")
-
 }
 
 func TestNewServiceIncorrectServiceName(t *testing.T) {
 	osMock := new(mockedOs)
 	osMock.On("Stat", initDPath+incorrectName).Return(nil, errors.New("incorect service name"))
 	_, err := newServiceWithOs(incorrectName, correctInterval, correctInterval, correctTries, osMock)
+	assert.NotNil(t, err, "Incorrect name should return error")
+}
+
+func TestNewServiceEmptyServiceName(t *testing.T) {
+	osMock := new(mockedOs)
+	osMock.On("Stat", initDPath).Return(nil, errors.New("empty service name"))
+	_, err := newServiceWithOs("", correctInterval, correctInterval, correctTries, osMock)
 	assert.NotNil(t, err, "Incorrect name should return error")
 }
 
@@ -92,4 +116,34 @@ func TestServiceStruct_StartTrue(t *testing.T) {
 	testService.os = osMock
 	running := testService.Start()
 	assert.True(t, running, "Service start should return true")
+}
+
+func TestServiceStruct_WatchBreak(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, statusCommand}).Return([]byte{}, nil)
+	testService.os = osMock
+	mockedSender := mockedSender{}
+	stop := make(chan bool)
+	done := make(chan bool)
+	go func(){
+		err := testService.Watch(&mockedSender, stop)
+		assert.Nil(t,err,"Watch error should be nil")
+		done <- true
+	}()
+	stop <- true
+	<- done
+}
+
+func TestServiceStruct_WatchStopAfterFailedStarts(t *testing.T) {
+	testService := newTestService()
+	osMock := new(mockedOs)
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, statusCommand}).Return([]byte{}, errors.New("error"))
+	osMock.On("ExecOutput", serviceCommand, []string{testService.name, startCommand}).Return([]byte{},  errors.New("error"))
+	testService.os = osMock
+	mockedSender := mockedSender{}
+	mockedSender.On("Send").Return(errors.New(""))
+	stop := make(chan bool)
+	err := testService.Watch(&mockedSender, stop)
+	assert.NotNil(t,err,"Multiple failed starts should stop watchdog")
 }
